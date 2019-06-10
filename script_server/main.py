@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 import socket
-from protocol import RemoteAPI
+from protocol import RemoteAPI, PalletTarget, PalletCurrent
 
 host='127.0.0.1'
 port=23333
@@ -26,11 +26,13 @@ def serve(host, port):
         conn.close()
 
 def exec_script(api):
-    state, height, have_goods = api.GetForkState()
-    print state, height, have_goods
-    
-    ack = api.SetForkState(1000, 1)
-    print ack
+    current = api.GetPalletState()
+    if current == PalletCurrent.BOTTOM:
+        target = api.SetPalletState(PalletTarget.TOP)
+        assert(target == PalletTarget.TOP)
+    elif current == PalletCurrent.TOP:
+        target = api.SetPalletState(PalletTarget.BOTTOM)
+        assert (target == PalletTarget.BOTTOM)
 
 if __name__ == "__main__":
     serve(host, port)
