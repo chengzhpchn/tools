@@ -33,9 +33,10 @@ def exec_script(api):
 
     api.GetAGVInfo()
 
-    import pdb;
-    pdb.set_trace()
     current = api.GetPalletState()
+    print current
+    import pdb; pdb.set_trace()
+    
     if current == PalletCurrent.BOTTOM:
         target = api.SetPalletState(PalletTarget.TOP)
         assert (target == PalletTarget.TOP)
