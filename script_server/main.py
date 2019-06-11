@@ -3,8 +3,8 @@
 import socket
 from protocol import RemoteAPI, PalletTarget, PalletCurrent
 
-host='127.0.0.1'
-port=23333
+host = '127.0.0.1'
+port = 23333
 
 
 def serve(host, port):
@@ -16,23 +16,33 @@ def serve(host, port):
     sk.listen(5)
 
     print 'server waiting...'
-    conn,addr = sk.accept()
+    conn, addr = sk.accept()
     print 'server working...'
     sk.close()
     api = RemoteAPI(conn)
     try:
         exec_script(api)
     finally:
+        print 'server exit...'
         conn.close()
 
+
 def exec_script(api):
+    state, height, have_goods = api.GetForkState()
+    print state, height, have_goods
+
+    api.GetAGVInfo()
+
+    import pdb;
+    pdb.set_trace()
     current = api.GetPalletState()
     if current == PalletCurrent.BOTTOM:
         target = api.SetPalletState(PalletTarget.TOP)
-        assert(target == PalletTarget.TOP)
+        assert (target == PalletTarget.TOP)
     elif current == PalletCurrent.TOP:
         target = api.SetPalletState(PalletTarget.BOTTOM)
         assert (target == PalletTarget.BOTTOM)
+
 
 if __name__ == "__main__":
     serve(host, port)

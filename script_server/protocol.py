@@ -58,6 +58,17 @@ class RemoteAPI:
     def GetAGVInfo(self):
         def OnAck(ack):
             CarrierNumber, Token, LocationX, LocationY, Attitude, NaviStatus, ControlMode, AutoMode, Speed, Battery, ErrorState = ack
+            print "CarrierNumber: ", CarrierNumber
+            print "Token:         ", Token
+            print "LocationX:     ", LocationX
+            print "LocationY:     ", LocationY
+            print "Attitude:      ", Attitude
+            print "NaviStatus:    ", NaviStatus
+            print "ControlMode:   ", ControlMode
+            print "AutoMode:      ", AutoMode
+            print "Speed:         ", Speed
+            print "Battery:       ", Battery
+            print "ErrorState:    ", ErrorState
             return CarrierNumber, Token, LocationX, LocationY, Attitude, NaviStatus, ControlMode, AutoMode, Speed, Battery, ErrorState
 
         return "GetPalletState", [], OnAck
