@@ -71,4 +71,4 @@ class RemoteAPI:
             print "ErrorState:    ", ErrorState
             return CarrierNumber, Token, LocationX, LocationY, Attitude, NaviStatus, ControlMode, AutoMode, Speed, Battery, ErrorState
 
-        return "GetPalletState", [], OnAck
+        return "GetAGVInfo", [], OnAck
