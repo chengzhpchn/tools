@@ -54,3 +54,10 @@ class RemoteAPI:
 
         return "GetPalletState", [], OnAck
 
+    @AGV_RPC
+    def GetAGVInfo(self):
+        def OnAck(ack):
+            CarrierNumber, _0, LocationX, LocationY, Attitude, NaviStatus, ControlMode, AutoMode, Speed, Battery, ErrorState = ack
+            return CarrierNumber, _0, LocationX, LocationY, Attitude, NaviStatus, ControlMode, AutoMode, Speed, Battery, ErrorState
+
+        return "GetPalletState", [], OnAck
