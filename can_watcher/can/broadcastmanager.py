@@ -11,7 +11,7 @@ import abc
 import logging
 import threading
 import time
-
+import warnings
 
 log = logging.getLogger('can.bcm')
 
@@ -85,7 +85,7 @@ class ModifiableCyclicTaskABC(CyclicSendTaskABC):
 
 
 class MultiRateCyclicSendTaskABC(CyclicSendTaskABC):
-    """Exposes more of the full power of the TX_SETUP opcode.
+    """A Cyclic send task that supports switches send frequency after a set time.
     """
 
     def __init__(self, channel, message, count, initial_period, subsequent_period):
@@ -93,7 +93,7 @@ class MultiRateCyclicSendTaskABC(CyclicSendTaskABC):
         Transmits a message `count` times at `initial_period` then continues to
         transmit message at `subsequent_period`.
 
-        :param can.interface.Bus channel:
+        :param channel: See interface specific documentation.
         :param can.Message message:
         :param int count:
         :param float initial_period:
@@ -153,6 +153,6 @@ def send_periodic(bus, message, period, *args, **kwargs):
     :param float period: The minimum time between sending messages.
     :return: A started task instance
     """
-    log.warning("The function `can.send_periodic` is deprecated and will " +
-                "be removed in version 2.3. Please use `can.Bus.send_periodic` instead.")
+    warnings.warn("The function `can.send_periodic` is deprecated and will " +
+                  "be removed in an upcoming version. Please use `can.Bus.send_periodic` instead.", DeprecationWarning)
     return bus.send_periodic(message, period, *args, **kwargs)

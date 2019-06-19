@@ -245,7 +245,7 @@ class NicanBus(BusABC):
                       channel=self.channel,
                       is_remote_frame=is_remote_frame,
                       is_error_frame=is_error_frame,
-                      extended_id=is_extended,
+                      is_extended_id=is_extended,
                       arbitration_id=arb_id,
                       dlc=dlc,
                       data=raw_msg.data[:dlc])
@@ -263,7 +263,7 @@ class NicanBus(BusABC):
             It does not wait for message to be ACKed currently.
         """
         arb_id = msg.arbitration_id
-        if msg.id_type:
+        if msg.is_extended_id:
             arb_id |= NC_FL_CAN_ARBID_XTD
         raw_msg = TxMessageStruct(arb_id,
                                   bool(msg.is_remote_frame),

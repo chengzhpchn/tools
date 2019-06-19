@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """
-This module contains handling for CSV (comma seperated values) files.
+This module contains handling for CSV (comma separated values) files.
 
 TODO: CAN FD messages are not yet supported.
 
@@ -18,6 +18,7 @@ from base64 import b64encode, b64decode
 from can.message import Message
 from can.listener import Listener
 from .generic import BaseIOHandler
+
 
 class CSVWriter(BaseIOHandler, Listener):
     """Writes a comma separated text file with a line for
@@ -37,13 +38,13 @@ class CSVWriter(BaseIOHandler, Listener):
     data             base64 encoded          WzQyLCA5XQ==
     ================ ======================= ===============
 
-    Each line is terminated with a platform specific line seperator.
+    Each line is terminated with a platform specific line separator.
     """
 
     def __init__(self, file, append=False):
         """
-        :param file: a path-like object or as file-like object to write to
-                     If this is a file-like object, is has to opened in text
+        :param file: a path-like object or a file-like object to write to.
+                     If this is a file-like object, is has to open in text
                      write mode, not binary write mode.
         :param bool append: if set to `True` messages are appended to
                             the file and no header line is written, else
@@ -61,7 +62,7 @@ class CSVWriter(BaseIOHandler, Listener):
         row = ','.join([
             repr(msg.timestamp), # cannot use str() here because that is rounding
             hex(msg.arbitration_id),
-            '1' if msg.id_type else '0',
+            '1' if msg.is_extended_id else '0',
             '1' if msg.is_remote_frame else '0',
             '1' if msg.is_error_frame else '0',
             str(msg.dlc),
@@ -77,7 +78,7 @@ class CSVReader(BaseIOHandler):
     format as described there. Assumes that there is a header
     and thus skips the first line.
 
-    Any line seperator is accepted.
+    Any line separator is accepted.
     """
 
     def __init__(self, file):
@@ -99,7 +100,7 @@ class CSVReader(BaseIOHandler):
             yield Message(
                 timestamp=float(timestamp),
                 is_remote_frame=(remote == '1'),
-                extended_id=(extended == '1'),
+                is_extended_id=(extended == '1'),
                 is_error_frame=(error == '1'),
                 arbitration_id=int(arbitration_id, base=16),
                 dlc=int(dlc),

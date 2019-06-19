@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 import logging
 
-__version__ = "2.3.0-a3"
+__version__ = "3.2.0"
 
 log = logging.getLogger('can')
 
@@ -20,6 +20,7 @@ class CanError(IOError):
 
     """
     pass
+
 
 from .listener import Listener, BufferedReader, RedirectReader
 try:

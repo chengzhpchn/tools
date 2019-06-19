@@ -18,6 +18,7 @@ import ctypes
 from can import CanError, BusABC
 from can import Message
 from . import constants as canstat
+from . import structures
 
 log = logging.getLogger('can.kvaser')
 
@@ -248,6 +249,18 @@ if __canlib is not None:
                                           restype=canstat.c_canStatus,
                                           errcheck=__check_status)
 
+    canRequestBusStatistics = __get_canlib_function("canRequestBusStatistics",
+                                                    argtypes=[c_canHandle],
+                                                    restype=canstat.c_canStatus,
+                                                    errcheck=__check_status)
+
+    canGetBusStatistics = __get_canlib_function("canGetBusStatistics",
+                                                argtypes=[c_canHandle,
+                                                          ctypes.POINTER(structures.BusStatistics),
+                                                          ctypes.c_size_t],
+                                                restype=canstat.c_canStatus,
+                                                errcheck=__check_status)
+
 
 def init_kvaser_library():
     if __canlib is not None:
@@ -289,7 +302,7 @@ class KvaserBus(BusABC):
     The CAN Bus implemented for the Kvaser interface.
     """
 
-    def __init__(self, channel, can_filters=None, **config):
+    def __init__(self, channel, can_filters=None, **kwargs):
         """
         :param int channel:
             The Channel id to create this bus with.
@@ -340,18 +353,18 @@ class KvaserBus(BusABC):
         """
 
         log.info("CAN Filters: {}".format(can_filters))
-        log.info("Got configuration of: {}".format(config))
-        bitrate = config.get('bitrate', 500000)
-        tseg1 = config.get('tseg1', 0)
-        tseg2 = config.get('tseg2', 0)
-        sjw = config.get('sjw', 0)
-        no_samp = config.get('no_samp', 0)
-        driver_mode = config.get('driver_mode', DRIVER_MODE_NORMAL)
-        single_handle = config.get('single_handle', False)
-        receive_own_messages = config.get('receive_own_messages', False)
-        accept_virtual = config.get('accept_virtual', True)
-        fd = config.get('fd', False)
-        data_bitrate = config.get('data_bitrate', None)
+        log.info("Got configuration of: {}".format(kwargs))
+        bitrate = kwargs.get('bitrate', 500000)
+        tseg1 = kwargs.get('tseg1', 0)
+        tseg2 = kwargs.get('tseg2', 0)
+        sjw = kwargs.get('sjw', 0)
+        no_samp = kwargs.get('no_samp', 0)
+        driver_mode = kwargs.get('driver_mode', DRIVER_MODE_NORMAL)
+        single_handle = kwargs.get('single_handle', False)
+        receive_own_messages = kwargs.get('receive_own_messages', False)
+        accept_virtual = kwargs.get('accept_virtual', True)
+        fd = kwargs.get('fd', False)
+        data_bitrate = kwargs.get('data_bitrate', None)
 
         try:
             channel = int(channel)
@@ -387,7 +400,7 @@ class KvaserBus(BusABC):
                  4)
         
         if fd:
-            if 'tseg1' not in config and bitrate in BITRATE_FD:
+            if 'tseg1' not in kwargs and bitrate in BITRATE_FD:
                 # Use predefined bitrate for arbitration
                 bitrate = BITRATE_FD[bitrate]
             if data_bitrate in BITRATE_FD:
@@ -396,9 +409,9 @@ class KvaserBus(BusABC):
             elif not data_bitrate:
                 # Use same bitrate for arbitration and data phase
                 data_bitrate = bitrate
-            canSetBusParamsFd(self._read_handle, bitrate, tseg1, tseg2, sjw)
+            canSetBusParamsFd(self._read_handle, data_bitrate, tseg1, tseg2, sjw)
         else:
-            if 'tseg1' not in config and bitrate in BITRATE_OBJS:
+            if 'tseg1' not in kwargs and bitrate in BITRATE_OBJS:
                 bitrate = BITRATE_OBJS[bitrate]
         canSetBusParams(self._read_handle, bitrate, tseg1, tseg2, sjw, no_samp, 0)
 
@@ -433,7 +446,7 @@ class KvaserBus(BusABC):
         self._timestamp_offset = time.time() - (timer.value * TIMESTAMP_FACTOR)
 
         self._is_filtered = False
-        super(KvaserBus, self).__init__(channel=channel, can_filters=can_filters, **config)
+        super(KvaserBus, self).__init__(channel=channel, can_filters=can_filters, **kwargs)
 
     def _apply_filters(self, filters):
         if filters and len(filters) == 1:
@@ -508,7 +521,7 @@ class KvaserBus(BusABC):
             rx_msg = Message(arbitration_id=arb_id.value,
                              data=data_array[:dlc.value],
                              dlc=dlc.value,
-                             extended_id=is_extended,
+                             is_extended_id=is_extended,
                              is_error_frame=is_error_frame,
                              is_remote_frame=is_remote_frame,
                              is_fd=is_fd,
@@ -516,8 +529,6 @@ class KvaserBus(BusABC):
                              error_state_indicator=error_state_indicator,
                              channel=self.channel,
                              timestamp=msg_timestamp + self._timestamp_offset)
-            rx_msg.flags = flags
-            rx_msg.raw_timestamp = msg_timestamp
             #log.debug('Got message: %s' % rx_msg)
             return rx_msg, self._is_filtered
         else:
@@ -526,7 +537,7 @@ class KvaserBus(BusABC):
 
     def send(self, msg, timeout=None):
         #log.debug("Writing a message: {}".format(msg))
-        flags = canstat.canMSG_EXT if msg.id_type else canstat.canMSG_STD
+        flags = canstat.canMSG_EXT if msg.is_extended_id else canstat.canMSG_STD
         if msg.is_remote_frame:
             flags |= canstat.canMSG_RTR
         if msg.is_error_frame:
@@ -573,6 +584,25 @@ class KvaserBus(BusABC):
             canClose(self._read_handle)
         canBusOff(self._write_handle)
         canClose(self._write_handle)
+
+    def get_stats(self):
+        """Retrieves the bus statistics.
+
+        Use like so:
+
+        >>> stats = bus.get_stats()
+        >>> print(stats)
+        std_data: 0, std_remote: 0, ext_data: 0, ext_remote: 0, err_frame: 0, bus_load: 0.0%, overruns: 0
+
+        :returns: bus statistics.
+        :rtype: can.interfaces.kvaser.structures.BusStatistics
+         """
+        canRequestBusStatistics(self._write_handle)
+        stats = structures.BusStatistics()
+        canGetBusStatistics(self._write_handle,
+                            ctypes.pointer(stats),
+                            ctypes.sizeof(stats))
+        return stats
 
     @staticmethod
     def _detect_available_configs():

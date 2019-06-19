@@ -1,8 +1,8 @@
 # coding: utf-8
 
 """
-This module contains the base implementation of `can.Bus` as well
-as a list of all avalibale backends and some implemented
+This module contains the base implementation of :class:`can.BusABC` as well
+as a list of all available backends and some implemented
 CyclicSendTasks.
 """
 
@@ -11,7 +11,6 @@ from __future__ import absolute_import, print_function
 import sys
 import importlib
 import logging
-import re
 
 import can
 from .bus import BusABC
@@ -21,7 +20,7 @@ from .interfaces import BACKENDS
 
 if 'linux' in sys.platform:
     # Deprecated and undocumented access to SocketCAN cyclic tasks
-    # Will be removed in version 3.0
+    # Will be removed in version 4.0
     from can.interfaces.socketcan import CyclicSendTask, MultiRateCyclicSendTask
 
 # Required by "detect_available_configs" for argument interpretation
@@ -76,7 +75,7 @@ class Bus(BusABC):
     """
 
     @staticmethod
-    def __new__(cls, channel=None, *args, **config):
+    def __new__(cls, channel=None, *args, **kwargs):
         """
         Takes the same arguments as :class:`can.BusABC.__init__`.
         Some might have a special meaning, see below.
@@ -87,7 +86,7 @@ class Bus(BusABC):
 
             Expected type is backend dependent.
 
-        :param dict config:
+        :param dict kwargs:
             Should contain an ``interface`` key with a valid interface name. If not,
             it is completed using :meth:`can.util.load_config`.
 
@@ -100,32 +99,32 @@ class Bus(BusABC):
 
         # figure out the rest of the configuration; this might raise an error
         if channel is not None:
-            config['channel'] = channel
-        if 'context' in config:
-            context = config['context']
-            del config['context']
+            kwargs['channel'] = channel
+        if 'context' in kwargs:
+            context = kwargs['context']
+            del kwargs['context']
         else:
             context = None
-        config = load_config(config=config, context=context)
+        kwargs = load_config(config=kwargs, context=context)
 
         # resolve the bus class to use for that interface
-        cls = _get_class_for_interface(config['interface'])
+        cls = _get_class_for_interface(kwargs['interface'])
 
         # remove the 'interface' key so it doesn't get passed to the backend
-        del config['interface']
+        del kwargs['interface']
 
         # make sure the bus can handle this config format
-        if 'channel' not in config:
+        if 'channel' not in kwargs:
             raise ValueError("'channel' argument missing")
         else:
-            channel = config['channel']
-            del config['channel']
+            channel = kwargs['channel']
+            del kwargs['channel']
 
         if channel is None:
             # Use the default channel for the backend
-            return cls(*args, **config)
+            return cls(*args, **kwargs)
         else:
-            return cls(channel, *args, **config)    
+            return cls(channel, *args, **kwargs)
 
 
 def detect_available_configs(interfaces=None):
@@ -145,7 +144,7 @@ def detect_available_configs(interfaces=None):
         - `None` to search in all known interfaces.
     :rtype: list[dict]
     :return: an iterable of dicts, each suitable for usage in
-             the constructor of :class:`can.interface.Bus`.
+             the constructor of :class:`can.BusABC`.
     """
 
     # Figure out where to search

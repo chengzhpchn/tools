@@ -11,12 +11,19 @@ import logging
 import threading
 from time import time
 from collections import namedtuple
+from aenum import Enum, auto
 
 from .broadcastmanager import ThreadBasedCyclicSendTask
 
 LOG = logging.getLogger(__name__)
 
-BusState = namedtuple('BusState', 'ACTIVE, PASSIVE, ERROR')
+
+class BusState(Enum):
+    """The state in which a :class:`can.BusABC` can be."""
+
+    ACTIVE = auto()
+    PASSIVE = auto()
+    ERROR = auto()
 
 
 class BusABC(object):
@@ -33,7 +40,7 @@ class BusABC(object):
     RECV_LOGGING_LEVEL = 9
 
     @abstractmethod
-    def __init__(self, channel, can_filters=None, **config):
+    def __init__(self, channel, can_filters=None, **kwargs):
         """Construct and open a CAN bus instance of the specified type.
 
         Subclasses should call though this method with all given parameters
@@ -45,7 +52,7 @@ class BusABC(object):
         :param list can_filters:
             See :meth:`~can.BusABC.set_filters` for details.
 
-        :param dict config:
+        :param dict kwargs:
             Any backend dependent configurations are passed in this dictionary
         """
         self._periodic_tasks = []
@@ -152,7 +159,7 @@ class BusABC(object):
             for transmit queue to be ready depending on driver implementation.
             If timeout is exceeded, an exception will be raised.
             Might not be supported by all interfaces.
-            None blocks indefinitly.
+            None blocks indefinitely.
 
         :raises can.CanError:
             if the message could not be sent
@@ -167,8 +174,8 @@ class BusABC(object):
         - the (optional) duration expires
         - the Bus instance goes out of scope
         - the Bus instance is shutdown
-        - :meth:`Bus.stop_all_periodic_tasks()` is called
-        - the task's :meth:`Task.stop()` method is called.
+        - :meth:`BusABC.stop_all_periodic_tasks()` is called
+        - the task's :meth:`CyclicTask.stop()` method is called.
 
         :param can.Message msg:
             Message to transmit
@@ -368,8 +375,8 @@ class BusABC(object):
     def state(self):
         """
         Return the current state of the hardware
-        :return: ACTIVE, PASSIVE or ERROR
-        :rtype: NamedTuple
+
+        :type: can.BusState
         """
         return BusState.ACTIVE
 
@@ -377,7 +384,8 @@ class BusABC(object):
     def state(self, new_state):
         """
         Set the new state of the hardware
-        :param new_state: BusState.ACTIVE, BusState.PASSIVE or BusState.ERROR
+
+        :type: can.BusState
         """
         raise NotImplementedError("Property is not implemented.")
 
