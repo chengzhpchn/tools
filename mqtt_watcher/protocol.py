@@ -65,7 +65,7 @@ request_class_dict = {
 }
 
 def on_request(_class, bytes):
-    '''=>'''
+    '''request'''
     _session = struct.unpack("<H", bytes[2:4])[0]
     handler = request_class_dict.get(_class, None)
     if handler:
@@ -94,8 +94,15 @@ def SystemStatusReport(bytes):
     status = struct.unpack("<B", bytes)[0]
     return locals()
 
+navi_status_trans = ('0-Unknown', '1-Lost', '2-Normal')
+ctrl_mode_trans = ('0-Manual', '1-Half-Auto', '2-Full-Auto')
+auto_mode_trans = ('0-Unknown', '1-Offline', '2-Half-Offline', '3-Online')
 def NormalStatusReport(bytes):
-    vn, token, location_x, location_y, attitude, navi_status, ctrl_mode, auto_mode, battery, error, logic_bits, logic_values = struct.unpack("<HHdddBBBHLL10H", bytes)
+    vn, token, location_x, location_y, attitude, navi_status, ctrl_mode, auto_mode, battery, error, logic_bits = struct.unpack("<HHdddBBBHLL", bytes[:-20])
+    logic_values = struct.unpack("<10H", bytes[-20:])
+    navi_status = navi_status_trans[navi_status]
+    ctrl_mode = ctrl_mode_trans[ctrl_mode]
+    auto_mode = auto_mode_trans[auto_mode]
     return locals()
 
 report_class_dict = {
@@ -109,6 +116,7 @@ report_class_dict = {
 }
 
 def on_report(_class, bytes):
+    '''report'''
     handler = report_class_dict.get(_class, None)
     if handler:
         return handler(bytes[2:])
@@ -203,7 +211,7 @@ response_class_dict = {
 }
 
 def on_response(_class, bytes):
-    '''<='''
+    '''response'''
     _session = struct.unpack("<H", bytes[2:4])[0]
     handler = response_class_dict.get(_class, None)
     if handler:
@@ -215,9 +223,13 @@ type_dict = {
     0x03: on_report
 }
 
-def parse_payload(bytes):
+def parse_header(bytes):
     # parse header
     _type, _class = struct.unpack("<BB", bytes[:2])
-    func = type_dict.get(_type, None)
-    if func:
-        func(_class, bytes)
+    return type_dict[_type].__doc__, _class, bytes[2:]
+
+def parse_content(_type, _class, content):
+    for key in type_dict:
+        func = type_dict.get(key, None)
+        if func.__doc__ == _type:
+            return func(_class, content)

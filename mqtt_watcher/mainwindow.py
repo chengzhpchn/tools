@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file './mainwindow.ui'
+# Form implementation generated from reading ui file '../../test/mqtt_listener/mainwindow.ui'
 #
 # Created by: PyQt5 UI code generator 5.12.2
 #
@@ -52,10 +52,10 @@ class Ui_MainWindow(object):
         self.CB_carrier_common.setGeometry(QtCore.QRect(190, 30, 211, 24))
         self.CB_carrier_common.setObjectName("CB_carrier_common")
         self.CB_carrier_session = QtWidgets.QCheckBox(self.groupBox_2)
-        self.CB_carrier_session.setGeometry(QtCore.QRect(190, 60, 201, 24))
+        self.CB_carrier_session.setGeometry(QtCore.QRect(190, 60, 211, 24))
         self.CB_carrier_session.setObjectName("CB_carrier_session")
         self.CB_system_common = QtWidgets.QCheckBox(self.groupBox_2)
-        self.CB_system_common.setGeometry(QtCore.QRect(410, 30, 231, 24))
+        self.CB_system_common.setGeometry(QtCore.QRect(410, 30, 221, 24))
         self.CB_system_common.setObjectName("CB_system_common")
         self.label_5 = QtWidgets.QLabel(self.groupBox_2)
         self.label_5.setGeometry(QtCore.QRect(10, 30, 41, 18))
@@ -64,19 +64,19 @@ class Ui_MainWindow(object):
         self.vehicle_no.setGeometry(QtCore.QRect(50, 30, 51, 26))
         self.vehicle_no.setObjectName("vehicle_no")
         self.CB_carrier_status1 = QtWidgets.QCheckBox(self.groupBox_2)
-        self.CB_carrier_status1.setGeometry(QtCore.QRect(190, 90, 181, 24))
+        self.CB_carrier_status1.setGeometry(QtCore.QRect(190, 90, 211, 24))
         self.CB_carrier_status1.setObjectName("CB_carrier_status1")
         self.CB_system_lastwill = QtWidgets.QCheckBox(self.groupBox_2)
-        self.CB_system_lastwill.setGeometry(QtCore.QRect(410, 120, 151, 24))
+        self.CB_system_lastwill.setGeometry(QtCore.QRect(410, 120, 221, 24))
         self.CB_system_lastwill.setObjectName("CB_system_lastwill")
         self.CB_system_session = QtWidgets.QCheckBox(self.groupBox_2)
-        self.CB_system_session.setGeometry(QtCore.QRect(410, 60, 181, 24))
+        self.CB_system_session.setGeometry(QtCore.QRect(410, 60, 221, 24))
         self.CB_system_session.setObjectName("CB_system_session")
         self.CB_system_status = QtWidgets.QCheckBox(self.groupBox_2)
-        self.CB_system_status.setGeometry(QtCore.QRect(410, 90, 181, 24))
+        self.CB_system_status.setGeometry(QtCore.QRect(410, 90, 221, 24))
         self.CB_system_status.setObjectName("CB_system_status")
         self.CB_carrier_status1_2 = QtWidgets.QCheckBox(self.groupBox_2)
-        self.CB_carrier_status1_2.setGeometry(QtCore.QRect(190, 120, 171, 24))
+        self.CB_carrier_status1_2.setGeometry(QtCore.QRect(190, 120, 211, 24))
         self.CB_carrier_status1_2.setObjectName("CB_carrier_status1_2")
         self.CB_carrier_lastwill = QtWidgets.QCheckBox(self.groupBox_2)
         self.CB_carrier_lastwill.setGeometry(QtCore.QRect(190, 150, 171, 24))
@@ -84,7 +84,7 @@ class Ui_MainWindow(object):
         self.tableWidget = QtWidgets.QTableWidget(self.centralWidget)
         self.tableWidget.setGeometry(QtCore.QRect(20, 280, 661, 151))
         self.tableWidget.setObjectName("tableWidget")
-        self.tableWidget.setColumnCount(3)
+        self.tableWidget.setColumnCount(4)
         self.tableWidget.setRowCount(0)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(0, item)
@@ -92,6 +92,8 @@ class Ui_MainWindow(object):
         self.tableWidget.setHorizontalHeaderItem(1, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(3, item)
         MainWindow.setCentralWidget(self.centralWidget)
         self.menuBar = QtWidgets.QMenuBar(MainWindow)
         self.menuBar.setGeometry(QtCore.QRect(0, 0, 693, 23))
@@ -130,6 +132,10 @@ class Ui_MainWindow(object):
         item = self.tableWidget.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "主题"))
         item = self.tableWidget.horizontalHeaderItem(1)
-        item.setText(_translate("MainWindow", "方向"))
+        item.setText(_translate("MainWindow", "类型"))
         item = self.tableWidget.horizontalHeaderItem(2)
-        item.setText(_translate("MainWindow", "信息"))
+        item.setText(_translate("MainWindow", "方向"))
+        item = self.tableWidget.horizontalHeaderItem(3)
+        item.setText(_translate("MainWindow", "内容"))
+
+
