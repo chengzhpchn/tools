@@ -1,13 +1,12 @@
 import can
 
-bus = can.interface.Bus(bustype='socketcan', channel='can0', bitrate=500000)
-
-# iterate over received messages
-#for msg in bus:
-#    print("{X}: {}".format(msg.arbitration_id, msg.data))
+bus0 = can.interface.Bus(bustype='socketcan', channel='can0', bitrate=500000)
+bus1 = can.interface.Bus(bustype='socketcan', channel='can1', bitrate=500000)
 
 # or use an asynchronous notifier
-notifier = can.Notifier(bus, [ can.Logger("recorded.asc"), can.Printer()])
+notifier0 = can.Notifier(bus0, [ can.Logger("recorded_can0.asc")])
+notifier1 = can.Notifier(bus1, [ can.Logger("recorded_can1.asc")])
 
 import time
 time.sleep(1000*10)
+
