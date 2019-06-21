@@ -1,11 +1,11 @@
 # -*- coding: UTF-8 -*-
-import struct
+import struct, base64
 
 def HeartbeatRequest(bytes):
     vn = struct.unpack("<H", bytes)[0]
     return locals()
 
-signal_trans = ('0-恢复', '1-挂起')
+signal_trans = ('0-Resume', '1-Hang up')
 def HangUpRequest(bytes):
     vn, signal = struct.unpack("<HB", bytes)
     signal = signal_trans[signal]
@@ -29,7 +29,7 @@ def RouteRequest(bytes):
     route_numbers = struct.unpack("<%dH" % _len, bytes[3:])
     return locals()
 
-block_type_trans = ("0-无阻塞", "1-小车阻塞", "2-区块阻塞", "3-变量阻塞")
+block_type_trans = ("0-None-Blocking", "1-Blocking", "2-Area Blocking", "3-Variable Blocking")
 def BlockRequest(bytes):
     vn, block_type, block_value = struct.unpack("<HBH", bytes)
     block_type = block_type_trans[block_type]
@@ -47,12 +47,17 @@ def WriteValueRequest(bytes):
 def ReadValueRequest(bytes):
     vn, start_index, _len = struct.unpack("<HBB", bytes[:4])
     return locals()
+
+def HandshakeRequest(bytes):
+    sn, vn = struct.unpack("<8sH", bytes[:10])
+    version = str(bytes[10:])
+    return locals()
 request_class_dict = {
     0x90: SimpleRequest,
     0x10: SimpleRequest,
     0x11: SimpleRequest,
     0x12: SimpleRequest,
-    0x01: SimpleRequest,
+    0x01: HandshakeRequest,
     0x50: HeartbeatRequest,
     0x51: HangUpRequest,
     0x21: LocalRouteRequest,
@@ -66,10 +71,10 @@ request_class_dict = {
 
 def on_request(_class, bytes):
     '''request'''
-    _session = struct.unpack("<H", bytes[2:4])[0]
+    _session = struct.unpack("<H", bytes[:2])[0]
     handler = request_class_dict.get(_class, None)
     if handler:
-        return handler(bytes[4:])
+        return handler.__name__, handler(bytes[2:])
 
 def SystemLastwillReport(bytes):
     return locals()
@@ -105,6 +110,17 @@ def NormalStatusReport(bytes):
     auto_mode = auto_mode_trans[auto_mode]
     return locals()
 
+route_status_trans = ("0-Unknown", "1-Way Point", "2-Way Line")
+task_status_trans = ("0-Unknown", "1-Mailing", "2-Operating", "3-Done")
+def TaskStatusReport(bytes):
+    vn, token, route_status, route_value1, route_value2, task_id, task_status, task_value, route_len = struct.unpack(
+        "<HHBHHBBHB", bytes[:14])
+    route_numbers = struct.unpack("<%dH" % route_len, bytes[14:])
+
+    route_status = route_status_trans[route_status]
+    task_status = task_status_trans[task_status]
+    return locals()
+
 report_class_dict = {
     0xF1: SystemLastwillReport,
     0xF2: CarrierLastwillReport,
@@ -112,21 +128,29 @@ report_class_dict = {
     0xB1: CarrierStartupReport,
     0xB2: CarrierShutdownReport,
     0xC0: SystemStatusReport,
-    0xC1: NormalStatusReport
+    0xC1: NormalStatusReport,
+    0xC2: TaskStatusReport
 }
 
 def on_report(_class, bytes):
     '''report'''
     handler = report_class_dict.get(_class, None)
     if handler:
-        return handler(bytes[2:])
+        return handler.__name__, handler(bytes)
 
 def DatetimeResponse(bytes):
     sn, vn, datetime = struct.unpack("<8sHd", bytes)
     return locals()
 
+def visualize_guid(guid):
+    s = base64.b16encode(guid).decode()
+    return "%s-%s-%s-%s-%s" % (s[:8], s[8:12], s[12:16], s[16:20], s[20:])
+
+
 def FileInfoResponse(bytes):
     sn, vn, route_guid, route_revision, carrier_guid, carrier_revision = struct.unpack("<8sH16sL16sL", bytes)
+    route_guid = visualize_guid(route_guid)
+    carrier_guid = visualize_guid(carrier_guid)
     return locals()
 
 def RouteFileResponse(bytes):
@@ -135,7 +159,7 @@ def RouteFileResponse(bytes):
     return locals()
 CarrierFileResponse = RouteFileResponse
 
-handshake_result_trans = ('0-成功', '1-该小车系统编号已注册', '2-该小车系统编号已绑定', '3-非法的序列号', '4-该小车未启用')
+handshake_result_trans = ('0-Success', '1-Already registered', '2-Already Binded', '3-Illegal serial No.', '4-Unused Vehicle')
 def HandshakeResponse(bytes):
     result, sn, vn, token = struct.unpack("<B8sHH", bytes[:13])
     version = bytes[13:]
@@ -165,7 +189,7 @@ def BlockResponse(bytes):
     block_type = block_type_trans[block_type]
     return locals()
 
-route_resp_result_trans = ('0-成功', '1-模式错误', '2-错误的路径编号')
+route_resp_result_trans = ('0-Success', '1-Pattern Error', '2-Way Point No. error')
 def LocalRouteResponse(bytes):
     vn, route_len, result = struct.unpack("<HBB", bytes)
     result = route_resp_result_trans[result]
@@ -212,10 +236,10 @@ response_class_dict = {
 
 def on_response(_class, bytes):
     '''response'''
-    _session = struct.unpack("<H", bytes[2:4])[0]
+    _session = struct.unpack("<H", bytes[:2])[0]
     handler = response_class_dict.get(_class, None)
     if handler:
-        return handler(bytes[4:])
+        return handler.__name__, handler(bytes[2:])
 
 type_dict = {
     0x01: on_request,
@@ -233,3 +257,11 @@ def parse_content(_type, _class, content):
         func = type_dict.get(key, None)
         if func.__doc__ == _type:
             return func(_class, content)
+
+if __name__ == "__main__":
+    import base64
+    content = "070018FD016D0000002703640000"
+    bytes = base64.b16decode(content)
+    #ret = TaskStatusReport(bytes[2:])
+    print(TaskStatusReport.__name__)
+    print( ret )
