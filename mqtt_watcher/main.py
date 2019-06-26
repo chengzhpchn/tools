@@ -16,21 +16,18 @@ PORT = 1883
 USER = "zj-r"
 PASSWORD = "68689168"
 
-CarrierCommonTopic = "ZJ/Carrier/Commom/"
-SystemCommonTopic = "ZJ/System/Commom/"
-CarrierStatus1Topic = "ZJ/Carrier/Status1/"
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
     assert (rc == 0)
-    #client.subscribe(CarrierCommonTopic + '+')
-    #client.subscribe(CarrierStatus1Topic + '+')#'N0001')
-    #client.subscribe(SystemCommonTopic + '+')
+
 
     global ui
     vn = ui.vehicle_no.text()
     prefix = vn[:2]
     int_vn = int(vn[2:])
+
+    client.subscribe("ZJ/Carrier/Debug/N%04d" % int_vn)
 
     for cb in [ui.CB_carrier_common,
                 ui.CB_carrier_session,
@@ -39,7 +36,7 @@ def on_connect(client, userdata, flags, rc):
                 ui.CB_system_lastwill,
                 ui.CB_system_session,
                 ui.CB_system_status,
-                ui.CB_carrier_status1_2,
+                ui.CB_carrier_status2,
                 ui.CB_carrier_lastwill]:
         if cb.isChecked():
             topic = cb.text()
@@ -53,10 +50,12 @@ def on_connect(client, userdata, flags, rc):
 table_dict = {} # (type, class) : index: int
 
 def on_message(client, userdata, msg):
-    #print("Topic: " + msg.topic)
     global ui
+
     try:
         _type, _class, content = protocol.parse_header(msg.payload)
+        if msg.topic.startswith("ZJ/Carrier/Debug"):
+            _type = "debug"
 
         index = table_dict.get((_type, _class), None)
         if index == None:
@@ -70,8 +69,6 @@ def on_message(client, userdata, msg):
         else:
             newItem = QTableWidgetItem( ' '.join(['%02x' % i for i in content]) )
             ui.tableWidget.setItem(index, 3, newItem)
-
-
     except Exception:
         traceback.print_exc()
 
@@ -91,6 +88,12 @@ def start_mqtt_client():
     client.username_pw_set(ui.user.text(), ui.password.text())
     client.connect(ui.broker_ipaddr.text(), int(ui.broker_port.text()), 60)
     client.loop_start()
+
+def debug_request(_class: int):
+    global ui
+    vn = ui.vehicle_no.text()
+    int_vn = int(vn[2:])
+    client.publish("ZJ/System/Debug/N%04d" % int_vn, bytes([1, _class]), 0)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -116,7 +119,7 @@ if __name__ == "__main__":
         topic = ui.tableWidget.item(index, 0).text()
         _type = ui.tableWidget.item(index, 2).text()
         _class = ui.tableWidget.item(index, 1).text()
-        content = topic = ui.tableWidget.item(index, 3).text()
+        content = ui.tableWidget.item(index, 3).text()
 
         content = content.replace(' ', '').upper()
         print(content)
@@ -139,5 +142,10 @@ if __name__ == "__main__":
         newItem = QTableWidgetItem(datas[i])
         ui.tableWidget.setItem(0, i, newItem)'''
 
+    ui.MotionInfoButton.clicked.connect(lambda: debug_request(0))
+    ui.MotionTaskButton.clicked.connect(lambda: debug_request(1))
+    ui.LiftInfoButton.clicked.connect(lambda: debug_request(2))
+    ui.LiftTaskButton.clicked.connect(lambda: debug_request(3))
+    ui.PalletTaskButton.clicked.connect(lambda: debug_request(4))
     app.exec_()
     client.loop_start()

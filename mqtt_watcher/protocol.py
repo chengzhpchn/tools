@@ -257,11 +257,43 @@ def parse_content(_type, _class, content):
         func = type_dict.get(key, None)
         if func.__doc__ == _type:
             return func(_class, content)
+    else:
+        #debug response
+        return on_debug_response(_class, content)
+
+module_state_trans = ('0-Unknown', '1-At Point', '2-At Line', '3-Exception')
+can_state_trans = ('0-illegal !!!', '1-ConnectionLost', '2-Connected', '3-BootUp', '4-CanopenStop', '5-Operational', '6-PreOperational')
+
+MotionModuleEx = ('Controller', 'Driver', 'SLAM', 'Location', 'Idle_NotAtPoint')
+
+def MotionInfoResponse(bytes):
+    State, HistoryState, _Exception, Index, SWVersion, CtrlMdlCanState, DrvMdlCanState = struct.unpack("<BBHH16sLL", bytes)
+    State = module_state_trans[State]
+    CtrlMdlCanState = can_state_trans[CtrlMdlCanState]
+    DrvMdlCanState = can_state_trans[DrvMdlCanState]
+    mask = 1
+    exlst = []
+    for i,desc in enumerate(MotionModuleEx):
+        if _Exception & (mask << i):
+            exlst.append(desc)
+    _Exception = ' & '.join(exlst) if exlst else "No Exception"
+    del mask, exlst, i, desc
+
+    del SWVersion
+    return locals()
+
+debug_response_class_dict = [
+    MotionInfoResponse, # 0
+]
+def on_debug_response(_class, content):
+    if _class < len(debug_response_class_dict):
+        handler= debug_response_class_dict[_class]
+        return handler.__name__, handler(content)
 
 if __name__ == "__main__":
     import base64
-    content = "070018FD016D0000002703640000"
+    content = "03DC0000F5760000E0FB0700E83409000CFC070003000500000005000000"
     bytes = base64.b16decode(content)
-    #ret = TaskStatusReport(bytes[2:])
-    print(TaskStatusReport.__name__)
+    ret = MotionInfoResponse(bytes)
+
     print( ret )
