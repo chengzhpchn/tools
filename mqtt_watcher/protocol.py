@@ -263,9 +263,7 @@ def parse_content(_type, _class, content):
 
 module_state_trans = ('0-Unknown', '1-At Point', '2-At Line', '3-Exception')
 can_state_trans = ('0-illegal !!!', '1-ConnectionLost', '2-Connected', '3-BootUp', '4-CanopenStop', '5-Operational', '6-PreOperational')
-
 MotionModuleEx = ('Controller', 'Driver', 'SLAM', 'Location', 'Idle_NotAtPoint')
-
 def MotionInfoResponse(bytes):
     State, HistoryState, _Exception, Index, SWVersion, CtrlMdlCanState, DrvMdlCanState = struct.unpack("<BBHH16sLL", bytes)
     State = module_state_trans[State]
@@ -282,8 +280,40 @@ def MotionInfoResponse(bytes):
     del SWVersion
     return locals()
 
+LiftModuleEx = ("Controller", "Driver", "Encoder", "TaskTimeout", "Unknown")
+def LiftInfoResponse(bytes):
+    State, _Exception, SWVersion, TargetHeight, CurrentHeight, CtrlMdlCanState, DrvMdlCanState, WireDrawEncoderCanState = struct.unpack("<BH16sHHLLL", bytes)
+    CtrlMdlCanState = can_state_trans[CtrlMdlCanState]
+    DrvMdlCanState = can_state_trans[DrvMdlCanState]
+    WireDrawEncoderCanState = can_state_trans[WireDrawEncoderCanState]
+
+    mask = 1
+    exlst = []
+    for i, desc in enumerate(LiftModuleEx):
+        if _Exception & (mask << i):
+            exlst.append(desc)
+    _Exception = ' & '.join(exlst) if exlst else "No Exception"
+    del mask, exlst, i, desc
+    del SWVersion
+    return locals()
+
+PalletState_trans = ("0-BOTTOM", "1-WAIT_FOR_RISING", "2-RISING", "3-TOP", "4-WAIT_FOR_FALLING", "5-FALLING")
+def PalletTaskResponse(bytes):
+    TaskState, TaskID, PalletState = struct.unpack("<BLB", bytes)
+    if PalletState == 255:
+        PalletState = '0xFF-Unknown'
+    else:
+        PalletState = PalletState_trans[PalletState]
+    return locals()
+
+def AGVModuleStateResponse(bytes):
+    MqttState, ScriptState, MotionControllerState, MotionDriverState, SlamState, BackupSlamState, LadarState, LiftControllerState, LiftDriverState, WireDrawEncoderState, IOBoardAState, IOBoardBState, BTBoardState, CVState, ZJMoveState, ZJRotateState =struct.unpack("<16B", bytes)
+    return locals()
 debug_response_class_dict = [
     MotionInfoResponse, # 0
+    LiftInfoResponse, # 1
+    PalletTaskResponse, # 2
+    AGVModuleStateResponse, # 3
 ]
 def on_debug_response(_class, content):
     if _class < len(debug_response_class_dict):
