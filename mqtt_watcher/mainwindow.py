@@ -112,6 +112,12 @@ class Ui_MainWindow(object):
         self.PalletTaskButton = QtWidgets.QPushButton(self.groupBox_3)
         self.PalletTaskButton.setGeometry(QtCore.QRect(190, 30, 80, 26))
         self.PalletTaskButton.setObjectName("PalletTaskButton")
+        self.MAButton = QtWidgets.QPushButton(self.centralWidget)
+        self.MAButton.setGeometry(QtCore.QRect(700, 150, 80, 26))
+        self.MAButton.setObjectName("MAButton")
+        self.MAEdit = QtWidgets.QLineEdit(self.centralWidget)
+        self.MAEdit.setGeometry(QtCore.QRect(810, 150, 81, 26))
+        self.MAEdit.setObjectName("MAEdit")
         MainWindow.setCentralWidget(self.centralWidget)
         self.menuBar = QtWidgets.QMenuBar(MainWindow)
         self.menuBar.setGeometry(QtCore.QRect(0, 0, 1069, 23))
@@ -161,5 +167,6 @@ class Ui_MainWindow(object):
         self.LiftInfoButton.setText(_translate("MainWindow", "举升信息"))
         self.LiftTaskButton.setText(_translate("MainWindow", "举升任务"))
         self.PalletTaskButton.setText(_translate("MainWindow", "托盘任务"))
+        self.MAButton.setText(_translate("MainWindow", "手自动自定义"))
 
 
